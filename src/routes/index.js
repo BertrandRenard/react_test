@@ -12,6 +12,7 @@ const todosRoutes = [
         element: <MainLayout />,
         children: [
             { index: true, element: <TodosPage /> },
+            { path: ':id', element: <TodosPage /> },
         ],
     },
     {
