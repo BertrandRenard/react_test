@@ -15,7 +15,16 @@ const TodoCard = ({ todo }) => {
   }
   
   return (
-    <Card onClick={handleSelectTodo} ><Stack p={2} alignItems='center' justifyContent='space-between' direction="row"><Typography variant='body2'>{todo.task}</Typography><Button onClick={handleDelete} size="small" variant='outlined' color='error'>Supprimer</Button></Stack></Card>
+    <Card onClick={handleSelectTodo} >
+      <Stack p={2} alignItems='center' justifyContent='space-between' direction="row">
+        <Typography variant='body2'>
+          {todo.task}
+        </Typography>
+        <Button onClick={handleDelete} size="small" variant='outlined' color='error'>
+          Supprimer
+        </Button>
+      </Stack>
+    </Card>
   )
 }
 
