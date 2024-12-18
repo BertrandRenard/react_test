@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire DAC6</title>
+</head>
+<body>
+
+<form id="dac6-form">
+    <!-- Entête -->
+    <fieldset>
+        <legend>Entête</legend>
+        <label>Nom de l'émetteur:
+            <input type="text" name="Entete[Emetteur][Nom]" required minlength="1" maxlength="60">
+        </label><br>
+        <label>Horodatage:
+            <input type="datetime-local" name="Entete[HorodatageDeclaration]" required>
+        </label><br>
+        <label>Type de Déclaration:
+            <select name="Entete[EssaiReel]" required>
+                <option value="01">Déclaration Réelle</option>
+                <option value="02">Déclaration de Test</option>
+            </select>
+        </label>
+    </fieldset>
+
+    <!-- Contribuables Concernés -->
+    <fieldset id="ContribuablesConcernes">
+        <legend>Contribuables Concernés</legend>
+    </fieldset>
+
+    <button type="button" onclick="ajouterContribuable()">Ajouter un Contribuable</button>
+    <button type="submit">Soumettre</button>
+    <button type="button" onclick="genererXML()">Générer XML</button>
+</form>
+
+<script>
+let contribuableCount = 0;
+
+function ajouterContribuable() {
+    const container = document.getElementById('ContribuablesConcernes');
+    const contribuable = document.createElement('fieldset');
+    contribuable.setAttribute('id', `contribuable_${contribuableCount}`);
+    contribuable.innerHTML = `
+        <legend>Contribuable</legend>
+        <fieldset>
+            <legend>Nom Personne Physique</legend>
+            <label>Nom:
+                <input type="text" name="ContribuablesConcernes[Contribuable_item_${contribuableCount}][NomPersonnePhysique][Nom]" required minlength="1" maxlength="200">
+            </label><br>
+            <label>Prénom:
+                <input type="text" name="ContribuablesConcernes[Contribuable_item_${contribuableCount}][NomPersonnePhysique][Prenom]" required minlength="1" maxlength="200">
+            </label><br>
+            <label>Date de Naissance:
+                <input type="date" name="ContribuablesConcernes[Contribuable_item_${contribuableCount}][NomPersonnePhysique][DateNaissance]" required>
+            </label><br>
+            <label>Pourcentage:
+                <input type="number" name="ContribuablesConcernes[Contribuable_item_${contribuableCount}][Pourcentage]" min="0" max="100">
+            </label><br>
+        </fieldset>
+        <label>Pays de Résidence Fiscale:
+            <input type="text" name="ContribuablesConcernes[Contribuable_item_${contribuableCount}][PaysResidenceFiscale]" required>
+        </label><br>
+        <label>Est associé:
+            <input type="checkbox" name="ContribuablesConcernes[Contribuable_item_${contribuableCount}][EstAssocie]">
+        </label><br>
+        <button type="button" onclick="supprimerContribuable(${contribuableCount})">Supprimer</button>
+    `;
+    container.appendChild(contribuable);
+    contribuableCount++;
+}
+
+function supprimerContribuable(id) {
+    const contribuable = document.getElementById(`contribuable_${id}`);
+    if (contribuable) {
+        contribuable.remove();
+    }
+}
+
+function extractData(form) {
+    const data = {};
+    function parseElement(element, parent) {
+        const name = element.getAttribute("name");
+        if (!name) return;
+        const path = name.split('[').map(p => p.replace(']', ''));
+        let current = parent;
+        for (let i = 0; i < path.length - 1; i++) {
+            if (!current[path[i]]) {
+                current[path[i]] = {};
+            }
+            current = current[path[i]];
+        }
+        current[path[path.length - 1]] = element.type === "checkbox" ? element.checked : element.value;
+    }
+    form.querySelectorAll("[name]").forEach(el => parseElement(el, data));
+    return data;
+}
+
+function generateXML(parent, data, doc) {
+    for (let key in data) {
+        const cleanKey = key.replace(/_item_\d+$/, "");
+        const child = doc.createElement(cleanKey);
+        if (typeof data[key] === "object" && data[key] !== null) {
+            generateXML(child, data[key], doc);
+        } else {
+            child.textContent = data[key];
+        }
+        parent.appendChild(child);
+    }
+}
+
+function genererXML() {
+    const form = document.querySelector("#dac6-form");
+    const formData = extractData(form);
+    const doc = document.implementation.createDocument("", "DAC6Dispositif", null);
+
+    generateXML(doc.documentElement, formData, doc);
+
+    const xmlString = new XMLSerializer().serializeToString(doc);
+    console.log(xmlString);
+    alert("XML généré! Consultez la console du navigateur.");
+}
+
+window.onload = function() {
+    ajouterContribuable();
+};
+</script>
+
+</body>
+</html>
