@@ -1,6 +1,5 @@
 from lxml import etree
 
-
 def generate_html_from_xsd(xsd_file):
     tree = etree.parse(xsd_file)
     root = tree.getroot()
@@ -16,7 +15,6 @@ def generate_html_from_xsd(xsd_file):
         print(f"Processing element: name={name}, type_ref={type_ref}, path={path}")
 
         if not name or element_id in visited:
-            print(f"Skipping element: name={name}, path={path} (already visited or no name)")
             return
 
         visited.add(element_id)
@@ -26,50 +24,67 @@ def generate_html_from_xsd(xsd_file):
             type_ref = type_ref.split(':')[-1]
 
         if type_ref.startswith("xsd:"):
-            print(f"Found base type: {type_ref}")
             if type_ref == "xsd:string":
                 html_code.append(f'<label>{name}: <input type="text" name="{input_name}" required></label><br>')
             elif type_ref == "xsd:integer":
                 html_code.append(f'<label>{name}: <input type="number" name="{input_name}"></label><br>')
             elif type_ref == "xsd:boolean":
-                print(html_code)
                 html_code.append(f'<label>{name}: <input type="checkbox" name="{input_name}"></label><br>')
             elif type_ref == "xsd:date":
                 html_code.append(f'<label>{name}: <input type="date" name="{input_name}"></label><br>')
             return
 
-        print(f"Searching for complexType: {type_ref}")
-        complex_type = root.find(f".//xsd:complexType[@name='{type_ref}']",
-                                 namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+        complex_type = root.find(f".//xsd:complexType[@name='{type_ref}']", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
         if complex_type is not None:
-            print(f"Found complexType: {type_ref}")
+            simple_content = complex_type.find("xsd:simpleContent", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+            if simple_content is not None:
+                extension = simple_content.find("xsd:extension", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+                if extension is not None:
+                    base_type = extension.get("base", "")
+                    if base_type.startswith("dac6:"):
+                        base_type = base_type.split(':')[-1]
+                    process_element(etree.Element("element", name=name, type=base_type), path)
+                return
+
             html_code.append(f'<fieldset id="{input_name}_container"><legend>{name}</legend>')
-            sequence = complex_type.find("xsd:sequence", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
-            if sequence is not None:
-                for child in sequence.findall("xsd:element", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"}):
+
+            choice = complex_type.find(".//xsd:choice", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+            if choice is not None:
+                select_name = f"{input_name}_choice"
+                html_code.append(f'<label>{name}: <select name="{select_name}" onchange="handleChoiceChange(this, \'{input_name}\')">')
+                html_code.append('<option value="">Sélectionner une option</option>')
+                for child in choice.findall("xsd:element", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"}):
+                    child_name = child.get("name")
+                    html_code.append(f'<option value="{child_name}">{child_name}</option>')
+                html_code.append('</select></label><br>')
+                for child in choice.findall("xsd:element", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"}):
+                    child_name = child.get("name")
+                    html_code.append(f'<div id="{input_name}_{child_name}_container" style="display:none;">')
                     process_element(child, input_name)
+                    html_code.append('</div>')
+            else:
+                sequence = complex_type.find(".//xsd:sequence", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+                if sequence is not None:
+                    for child in sequence.findall("xsd:element", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"}):
+                        process_element(child, input_name)
+
             html_code.append("</fieldset>")
             return
 
-        print(f"Searching for local complexType in element: {name}")
         local_complex_type = element.find("xsd:complexType", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
         if local_complex_type is not None:
-            print(f"Found local complexType in element: {name}")
             html_code.append(f'<fieldset id="{input_name}_container"><legend>{name}</legend>')
-            sequence = local_complex_type.find("xsd:sequence", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+            sequence = local_complex_type.find(".//xsd:sequence", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
             if sequence is not None:
                 for child in sequence.findall("xsd:element", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"}):
                     process_element(child, input_name)
             html_code.append("</fieldset>")
             return
 
-        print(f"Searching for simpleType: {type_ref}")
-        simple_type = root.find(f".//xsd:simpleType[@name='{type_ref}']",
-                                namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
+        simple_type = root.find(f".//xsd:simpleType[@name='{type_ref}']", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
         if simple_type is not None:
             restriction = simple_type.find("xsd:restriction", namespaces={"xsd": "http://www.w3.org/2001/XMLSchema"})
             base_type = restriction.get("base") if restriction is not None else ""
-            print(f"Found simpleType: {type_ref}, base_type={base_type}, simpleType name={simple_type.get('name')}")
             if base_type == "xsd:string":
                 html_code.append(f'<label>{name}: <input type="text" name="{input_name}" required></label><br>')
             elif base_type == "xsd:integer":
@@ -87,6 +102,18 @@ def generate_html_from_xsd(xsd_file):
     html_code.insert(0, "<form id='dac6-form'>")
     html_code.append("<button type='submit'>Soumettre</button>")
     html_code.append("</form>")
+
+    html_code.append('<script>\n'
+                    'function handleChoiceChange(select, baseId) {\n'
+                    '  const options = select.options;\n'
+                    '  for (let i = 1; i < options.length; i++) {\n'
+                    '    const childId = `${baseId}_${options[i].value}_container`;\n'
+                    '    const element = document.getElementById(childId);\n'
+                    '    if (element) {\n'
+                    '      element.style.display = options[i].value === select.value ? "block" : "none";\n'
+                    '    }\n'
+                    '  }\n'
+                    '}\n</script>')
 
     return "\n".join(html_code)
 
