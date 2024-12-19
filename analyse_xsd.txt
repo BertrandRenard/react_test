@@ -1,0 +1,74 @@
+annotation	documentation
+attribute	annotation
+choice	element
+complexContent	extension
+complexType	annotation, choice, complexContent, sequence, simpleContent
+documentation	
+element	annotation, complexType, simpleType, unique
+enumeration	annotation
+extension	attribute
+length	
+maxInclusive	
+maxLength	
+minInclusive	
+minLength	
+restriction	enumeration, length, maxInclusive, maxLength, minInclusive, minLength, whiteSpace
+sequence	choice, element
+simpleContent	extension
+simpleType	annotation, restriction, union
+union	simpleType
+whiteSpace	
+
+
+# Extract children only from 'simpleContent' and 'complexContent' separately
+
+# Initialize a separate structure for these tags
+separate_content_structure = {}
+
+# Extract children from 'simpleContent' and 'complexContent'
+for content_tag in ["simpleContent", "complexContent"]:
+    elements = xsd_tree.findall(f".//{{http://www.w3.org/2001/XMLSchema}}{content_tag}")
+    if elements:
+        for element in elements:
+            parent_tag = etree.QName(element).localname
+            if parent_tag not in separate_content_structure:
+                separate_content_structure[parent_tag] = set()
+
+            # Extract children, ensuring all are captured
+            for child in element.iterchildren():
+                if isinstance(child.tag, str):
+                    child_tag = etree.QName(child).localname
+                    separate_content_structure[parent_tag].add(child_tag)
+
+# Extract children from all other standard tags excluding 'simpleContent' and 'complexContent'
+remaining_xsd_structure = {}
+
+# Extract children from remaining XSD standard tags
+for tag in corrected_xsd_standard_tags_fixed - {"simpleContent", "complexContent"}:
+    elements = xsd_tree.findall(f".//{{http://www.w3.org/2001/XMLSchema}}{tag}")
+    if elements:
+        for element in elements:
+            parent_tag = etree.QName(element).localname
+            if parent_tag not in remaining_xsd_structure:
+                remaining_xsd_structure[parent_tag] = set()
+
+            # Extract children
+            for child in element.iterchildren():
+                if isinstance(child.tag, str):
+                    child_tag = etree.QName(child).localname
+                    remaining_xsd_structure[parent_tag].add(child_tag)
+
+# Merge both structures
+merged_xsd_structure = {**remaining_xsd_structure, **separate_content_structure}
+
+# Convert to sorted lists for readability
+merged_xsd_structure_sorted = {
+    key: sorted(value) for key, value in merged_xsd_structure.items()
+}
+
+# Create and display DataFrame
+merged_xsd_df = pd.DataFrame(
+    [{'Parent Tag': key, 'Child Tags': ', '.join(value)} for key, value in merged_xsd_structure_sorted.items()]
+)
+merged_xsd_df.sort_values(by='Parent Tag', inplace=True)
+tools.display_dataframe_to_user("Merged XSD Structure", merged_xsd_df)
