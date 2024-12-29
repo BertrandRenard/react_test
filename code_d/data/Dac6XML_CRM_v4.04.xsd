@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dac6="urn:fr:gouv:finances:dac6:crm:v1.00"
+  targetNamespace="urn:fr:gouv:finances:dac6:crm:v1.00" version="1.0">
+
+  <xs:element name="CRM">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="EnTete" type="dac6:entete" />
+        <xs:element name="CompteRendu" type="dac6:compteRendu" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="compteRendu">
+    <xs:annotation>
+      <xs:documentation>Partie compte rendu du fichier CRM</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element minOccurs="0" name="IdDispositif" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>identifiant du dispositif</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="Erreur" type="dac6:erreur">
+        <xs:annotation>
+          <xs:documentation>Liste des erreurs globales liée au fichier</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element minOccurs="0" name="ListeDeclarations" type="dac6:listeDeclarations">
+        <xs:annotation>
+          <xs:documentation>Liste des déclarations traitées</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="erreur">
+    <xs:annotation>
+      <xs:documentation>Représente une erreur avec son code et libellé</xs:documentation>
+    </xs:annotation>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="code_erreur" type="xs:string" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="listeDeclarations">
+    <xs:annotation>
+      <xs:documentation>Liste des declarations</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="Declaration" type="dac6:declaration" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="declaration">
+    <xs:annotation>
+      <xs:documentation>Représente une déclaration</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="Erreur" type="dac6:erreur">
+        <xs:annotation>
+          <xs:documentation>Les différentes erreurs associées à la déclaration</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="numero" type="xs:int" use="required">
+      <xs:annotation>
+        <xs:documentation>Numéro incrémental d'affichage dans le CRM</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="identifiant" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Identifiant de la déclaration</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="statut" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Statut de la déclaration</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="entete">
+    <xs:annotation>
+      <xs:documentation>En tête du CRM</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="NomFichier" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Nom du fichier concerné</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="DateTraitement" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>date de traitement</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="StatutFichier" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Statut du fichier</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

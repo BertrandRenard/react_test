@@ -1,0 +1,10 @@
+- gérer les balises unique
+- gérer l'attribut optional
+- gérer l'attribut inconnu
+- gérer l'attribut minInclusive/maxInclusive
+- restriction min/max len & whitespace
+- checker le nombre max de création
+
+- ajout des attributs dans xml
+- filtrer les templates dans le xml
+- gérer les fieldset en doublon depuis ajout min max occurs dans simpletype
