@@ -19,10 +19,10 @@ function extractData(form) {
             if (i === path.length - 1) {
                 // Dernier niveau
                 if (isAttribute) {
-                    if (!currentParent.attributes) {
-                        currentParent.attributes = {};
+                    if (!current.attributes) {
+                        current.attributes = {};
                     }
-                    currentParent.attributes[currentKey] = element.value;
+                    current.attributes[currentKey] = element.value;
                 } else {
                     current[currentKey] = element.type === "checkbox" ? element.checked : element.value;
                 }
@@ -46,6 +46,11 @@ function generateXML(parent, data, doc) {
     for (let key in data) {
         const cleanKey = key.replace(/_item_\d+$/, "");
         const elementData = data[key];
+
+        // Ne pas dupliquer les balises : ignorer si c'est un attribut seul
+        if (Object.keys(elementData).length === 1 && elementData.attributes) {
+            continue;
+        }
 
         // Créer un élément XML
         const child = doc.createElement(cleanKey);
