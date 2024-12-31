@@ -1,31 +1,42 @@
 // Fonction modifiée pour extraire les données des attributs
 function extractData(form) {
     const data = {};
+
     function parseElement(element, parent) {
         const name = element.getAttribute("name");
         if (!name) return;
-        
+
         const isAttribute = name.includes("__attribute__");
         const path = name.split('[').map(p => p.replace(']', ''));
-        let current = parent;
-        
-        for (let i = 0; i < path.length - 1; i++) {
-            const key = path[i].replace("__attribute__", "");
-            if (!current[key]) {
-                current[key] = { attributes: {}, children: {} };
-            }
-            current = current[key].children;
-        }
 
-        const key = path[path.length - 1].replace("__attribute__", "");
-        if (isAttribute) {
-            const parentKey = path[path.length - 2].replace("__attribute__", "");
-            parent[parentKey].attributes[key] = element.value;
-        } else {
-            current[key] = element.type === "checkbox" ? element.checked : element.value;
+        let current = parent;
+        let currentParent = null;
+        let currentKey = null;
+
+        for (let i = 0; i < path.length; i++) {
+            currentKey = path[i].replace("__attribute__", "");
+
+            if (i === path.length - 1) {
+                // Dernier niveau
+                if (isAttribute) {
+                    if (!currentParent.attributes) {
+                        currentParent.attributes = {};
+                    }
+                    currentParent.attributes[currentKey] = element.value;
+                } else {
+                    current[currentKey] = element.type === "checkbox" ? element.checked : element.value;
+                }
+            } else {
+                // Niveaux intermédiaires
+                if (!current[currentKey]) {
+                    current[currentKey] = { attributes: {}, children: {} };
+                }
+                currentParent = current[currentKey];
+                current = current[currentKey].children;
+            }
         }
     }
-    
+
     form.querySelectorAll("[name]").forEach(el => parseElement(el, data));
     return data;
 }
